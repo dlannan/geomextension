@@ -1,30 +1,38 @@
-function init(self)
-	local s = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	local reverse_s = myextension.reverse(s)
-	print(reverse_s) --> ZYXWVUTSRQPONMLKJIHGFEDCBAzyxwvutsrqponmlkjihgfedcba
-end
 
-function final(self)
-	-- Add finalization code here
-	-- Remove this function if not needed
+local geom = require("example.geometry-utils")
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	msg.post("@render:", "use_camera_projection")
+	msg.post("camera", "acquire_camera_focus")
+
+	-- rotate the cube
+	go.animate(".", "euler.z", go.PLAYBACK_LOOP_FORWARD, 360, go.EASING_INOUTQUAD, 6)
+	go.animate(".", "euler.x", go.PLAYBACK_LOOP_FORWARD, 360, go.EASING_INOUTQUAD, 9)
+	go.animate(".", "euler.y", go.PLAYBACK_LOOP_FORWARD, 360, go.EASING_INOUTQUAD, 12)
+
+	-- position directional light
+	self.light = vmath.vector4(0, 0, go.get_position().z + 1, 0)
+	self.sizeScaler = 2.0
+	self.ctr = 0.0
+
+	-- Generate a cube mesh with size 1 with 1 subdiv
+	geom:GenerateCube("/go#genmesh", 0.5, 1 )
+	--geom:GenerateBlock("/main#genmesh", 0.5, 6, 1 )
+	model.set_constant("/go#genmesh", "light", self.light)
 end
 
 function update(self, dt)
-	-- Add update code here
-	-- Remove this function if not needed
-end
 
-function on_message(self, message_id, message, sender)
-	-- Add message-handling code here
-	-- Remove this function if not needed
+	self.ctr = self.ctr + dt
+	-- Regen the cube every frame - just as an example, shouldnt really do this :)
+	geom:GenerateCube("/go#genmesh", self.sizeScaler, 1 )
+	self.sizeScaler = (math.sin(self.ctr)) * 2.0
 end
 
 function on_input(self, action_id, action)
-	-- Add input-handling code here
-	-- Remove this function if not needed
-end
-
-function on_reload(self)
-	-- Add reload-handling code here
-	-- Remove this function if not needed
+	-- move directional light based on input
+	self.light.x = 2 * ((action.x - 480) / 480)
+	self.light.y = 2 * ((action.y - 320) / 320)
+	model.set_constant("/go#genmesh", "light", self.light)
 end
